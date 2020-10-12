@@ -15,24 +15,24 @@ from ray.tune.registry import register_env
 
 if __name__ == "__main__":
     ray.init()  
-    n_players = 5
-    agents_id = ['player' + '{:02d}'.format(i) for i in range(n_players)]
-    actions = {agents_id[i]:1 for i in range(n_players)}
+    nb_agents = 1
+    agent_id = ['agent' + '{:02d}'.format(i) for i in range(nb_agents)]
+    actions = {agent_id[i]:1 for i in range(nb_agents)}
 
     register_env("partner_choice",
-            lambda _: PartnerChoice(n_players))
-    env = PartnerChoice(n_players)
+            lambda _: PartnerChoice(nb_agents))
+    env = PartnerChoice(nb_agents)
     act_space = env.action_space
     obs_space = env.observation_space
-    print(env.reset())
+    print(act_space)
     action_test = {'agent00': [4.666666666666667, 1], 'agent01': [4.666666666666667, 1], 'agent02': [9.333333333333334, 1], 'agent03': [4.666666666666667, 1], 'agent04': [9.333333333333334, 1]}
-    print(env.step(action_test))
+    #print(env.step(action_test))
 
     #print(obs_space.sample())
 
 
-"""
-    policies = {agents_id[i]: (PPOTorchPolicy, obs_space, act_space, {}) for i in range(n_players)}
+
+    policies = {agent_id[i]: (PPOTorchPolicy, obs_space, act_space, {}) for i in range(nb_agents)}
 
     def select_policy(agent_id):
         return agent_id
@@ -54,4 +54,3 @@ if __name__ == "__main__":
         #print(trainer.workers.local_worker().env)
         result_ppo = trainer.train()
         print(pretty_print(result_ppo))
-"""
