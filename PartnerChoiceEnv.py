@@ -53,9 +53,10 @@ class PartnerChoice(MultiAgentEnv):
 
         # All agents receive their reward for previous site and observe a new site
         for agent_id, action_value in action_dict.items():
-            print(action_value)
+            #print(action_value)
             # Reward of the previous action
-            if action_value[0] > self.site_acceptance_threshold[self.previous_interaction_id[agent_id]] and action_value[1]==1:
+            print(action_value)
+            if action_value[0] > self.site_acceptance_threshold[self.previous_interaction_id[agent_id]] and action_value[1]>= self.max_action/2:
                 self.rewards[agent_id] = payoff(action_value[1], self.site_action[self.previous_interaction_id[agent_id]])
             else:
                 self.rewards[agent_id] = 0
@@ -66,8 +67,6 @@ class PartnerChoice(MultiAgentEnv):
  
 
         # done after 10 moves
-        done = {"__all__": self.iteration_count >= 10}
-
+        done = {"__all__": self.iteration_count >= 100}
+        #print(self.obs, self.rewards)
         return self.obs, self.rewards, done, {}
-
-
