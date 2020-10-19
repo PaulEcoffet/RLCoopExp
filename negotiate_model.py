@@ -19,7 +19,7 @@ class InvestorModel(TorchModelV2, nn.Module):
     def __init__(self, obs_space, action_space, num_outputs, model_config, name):
         super().__init__(obs_space, action_space, num_outputs, model_config, name)
         nn.Module.__init__(self)
-        self.x_value = nn.Parameter(torch.ones(2), True)
+        self.x_value = nn.Parameter(torch.zeros(2), True)
         self.h_value_branch = SlimFC(
             in_size=1,
             out_size=2,
@@ -36,7 +36,7 @@ class InvestorModel(TorchModelV2, nn.Module):
 
     def forward(self, input_dict: Dict[str, TensorType], state: List[TensorType], seq_lens: TensorType) -> (
             TensorType, List[TensorType]):
-        return self.x_value, []
+        return torch.tanh(self.x_value).view(-1, 2), []
 
     def value_function(self) -> TensorType:
-        return self.value_branch(self.x_value[0])
+        return self.value_branch(torch.tanh(self.x_value).view(-1, 2)[:, 0])

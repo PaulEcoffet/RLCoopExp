@@ -4,69 +4,105 @@ import numpy as np
 from ray.rllib.env.multi_agent_env import MultiAgentEnv
 
 
+def get_id(agent_name):
+    inv = 'inv'
+    choice = 'choice'
+    if agent_name.startswith(inv):
+        return int(agent_name[len(inv):])
+    elif agent_name.startswith(choice):
+        return int(agent_name[len(choice):])
+    else:
+        raise ValueError
+
+
 def payoff(xi, xj):
     a = 5
-    b = 10
-    pg = a*0.5*(xi+xj)
-    pd = b*0.5*xj
+    b = 5
+    pg = a*xi
+    pd = b*xj
     c = 0.5*xi**2
     return pg + pd - c
 
+
 class PartnerChoice(MultiAgentEnv):
 
-    def __init__(self, nb_agents=1, nb_sites=10):
+    def __init__(self, nb_agents=1, nb_sites=100):
 
         self.nb_agents = nb_agents
         self.nb_sites = nb_sites
 
         self.iteration_count = 0
 
-        self.agents_names = ['agent' + '{:02d}'.format(i) for i in range(self.nb_agents)]
+        self.agents_names = ['inv' + '{:02d}'.format(i) for i in range(self.nb_agents)]
+        self.agents_names += ['choice' + '{:02d}'.format(i) for i in range(self.nb_agents)]
+        self.inv = [0 for i in range(self.nb_agents)]
+        self.cur_opp = [-1 for i in range(self.nb_agents)]
 
         self.max_action = 15
+        self.all_dones = [False for i in range(self.nb_agents)]
 
-        self.action_space = Box(low=np.asarray([0, 0]), high=np.asarray([self.max_action, 1]),
-                                shape=(2,), dtype=np.float64)
-        self.observation_space = Box(low=0, high=self.max_action, shape=(1,), dtype=np.float64)
+        self.action_space = Discrete(1)
+        self.observation_space = Box(low=0, high=self.max_action, shape=(2,), dtype=np.float64)
 
-        self.previous_obs = {}
-
-        self.site_action = np.linspace(0, self.max_action, self.nb_sites)
-        #print(self.site_action)
+        self.site_action = np.linspace(0.1, self.max_action, self.nb_sites)
 
         self.site_acceptance_threshold = np.copy(self.site_action)
 
-        self.previous_interaction_id = {self.agents_names[i]: 0 for i in range(self.nb_agents)}
-
-        self.rewards = {}
-        self.obs = {}
-
     def reset(self):
-        #print('Hey RESET')
         self.iteration_count = 0
+        self.all_dones = [False for i in range(self.nb_agents)]
+        self.cur_opp = [None for i in range(self.nb_agents)]
+        # Make all individuals make their investment choice
         return {
-            agent_name: [self.site_action[self.previous_interaction_id[agent_name]]] for agent_name in self.agents_names
+            f'inv{i:02}': np.array([0]) for i in range(self.nb_agents)
         }
 
     def step(self, action_dict):
         self.iteration_count += 1
+        obs = {}
+        reward = {}
+        done = {}
 
-        # All agents receive their reward for previous site and observe a new site
-        for agent_id, action_value in action_dict.items():
-            #print(action_value)
-            # Reward of the previous action
-            print(action_value)
-            if action_value[0] > self.site_acceptance_threshold[self.previous_interaction_id[agent_id]] and action_value[1]>= self.max_action/2:
-                self.rewards[agent_id] = payoff(action_value[1], self.site_action[self.previous_interaction_id[agent_id]])
-            else:
-                self.rewards[agent_id] = 0
+        for agent_name in action_dict:
+            ind = get_id(agent_name)
+            # If we get a investment action
+            if agent_name.startswith('inv'):
+                self.inv[ind] = action_dict[agent_name][0] * 15
+                if np.random.rand() < 0.05:
+                    print(self.inv[ind])
+                self.cur_opp[ind] = np.random.randint(self.nb_sites)
+                obs[f'choice{ind:02d}'] = np.array([self.site_action[self.cur_opp[ind]], self.inv[ind]])
+                reward[f'choice{ind:02d}'] = 0  # dummy reward at init
+            else:  # if it's a choice action
+                # if they both agree
+                curopp = self.cur_opp[ind]
+                if action_dict[agent_name] == 1 and self.inv[ind] >= self.site_acceptance_threshold[curopp]:
+                    curpayoff = payoff(self.inv[ind], self.site_action[curopp])
+                    if np.random.rand() < 0.05:
+                        print(f"payoff({self.inv[ind]}, {self.site_action[curopp]}) = {curpayoff}")
+                    # give payoff to both module and end interaction
+                    reward[agent_name] = curpayoff
+                    reward[f'inv{ind:02d}'] = curpayoff
+                    obs[agent_name] = np.array([0, 0])
+                    done[agent_name] = True
+                    done[f'inv{ind:02d}'] = True
+                    obs[f'inv{ind:02d}'] = np.array([0])
+                    self.all_dones[ind] = True
+                else:  # if at least one disagree
+                    reward[agent_name] = 0
+                    done[agent_name] = False
+                    self.cur_opp[ind] = np.random.randint(self.nb_sites)
+                    obs[f'choice{ind:02d}'] = np.array([self.site_action[self.cur_opp[ind]], self.inv[ind]])
 
-            # Agent new observation
-            self.previous_interaction_id[agent_id] = randrange(0, self.nb_sites)
-            self.obs[agent_id] = [self.site_action[self.previous_interaction_id[agent_id]]]
- 
-
-        # done after 10 moves
-        done = {"__all__": self.iteration_count >= 100}
-        #print(self.obs, self.rewards)
-        return self.obs, self.rewards, done, {}
+        done["__all__"] = all(self.all_dones)  # Everyone has finished
+        if self.iteration_count >= 20:  # or max iter count
+            for i in range(self.nb_agents):
+                if not self.all_dones[i]:
+                    obs[f'inv{i:02d}'] = np.array([0])
+                    reward[f'inv{i:02d}'] = 0
+                    done[f'inv{i:02d}'] = True
+                    obs[f'choice{i:02d}'] = np.array([0, 0])
+                    reward[f'choice{i:02d}'] = 0
+                    done[f'choice{i:02d}'] = True
+            done['__all__'] = True
+        return obs, reward, done, {}
