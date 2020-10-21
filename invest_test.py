@@ -13,7 +13,7 @@ class InvestTestEnv(gym.Env):
         super().__init__()
 
     def reset(self):
-        return np.array([0])
+        return np.array([0.0])
 
     def render(self, mode='human'):
         pass
@@ -21,7 +21,7 @@ class InvestTestEnv(gym.Env):
     def step(self, action: np.ndarray):
         if np.random.rand() < 0.01:
             print(action[0] * 15)
-        return [0], action[0], True, {}
+        return [0.0], action[0], True, {}
 
 
 if __name__ == "__main__":

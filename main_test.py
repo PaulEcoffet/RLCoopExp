@@ -1,4 +1,4 @@
-from PartnerChoiceEnv import PartnerChoice
+from PartnerChoiceEnv import PartnerChoiceFakeSites
 import numpy as np
 import ray
 from ray import tune
@@ -23,20 +23,23 @@ if __name__ == "__main__":
 
 
     register_env("partner_choice",
-            lambda _: PartnerChoice(nb_agents))
+                 lambda config: PartnerChoiceFakeSites(config))
     ModelCatalog.register_custom_model("investor_model", InvestorModel)
 
-    env = PartnerChoice(nb_agents)
     choice_act_space = Discrete(2)
-    choice_obs_space = Box(np.array([0, 0], dtype=np.float32), np.array([env.max_action, env.max_action], dtype=np.float32))
-    inv_act_space = Box(np.array([0], dtype=np.float32), np.array([1], dtype=np.float32))
+    choice_obs_space = Box(np.array([0, 0], dtype=np.float32), np.array([15, 15], dtype=np.float32))
+    inv_act_space = Box(np.array([-1], dtype=np.float32), np.array([1], dtype=np.float32))
     inv_obs_space = Box(np.array([0], dtype=np.float32), np.array([1], np.float32))
 
-    investormodel_dict = {
-                            "fcnet_hiddens": [3]
+    choicemodel_dict = {
+                            "fcnet_hiddens": [3],
+                            "model":
+                                {
+                                    "custom_model": None,
+                                },
                           }
 
-    choicemodel_dict = {
+    investormodel_dict = {
         "model": {
         "custom_model": "investor_model",
         }
@@ -57,10 +60,13 @@ if __name__ == "__main__":
             },
         "clip_actions": True,
         "framework": "torch",
-        "num_sgd_iter": 3,
-        "lr": 5e-2,
-        #"kl_target": 0.03,
-        "sgd_minibatch_size": 32
+        "no_done_at_end": True,
+        "gamma": 1,
+        "env_config":
+            {
+                "bad_site_prob": 0.999,
+                "max_it": 10000
+            }
     }
     
     trainer = PPOTrainer(env="partner_choice", config=config)
