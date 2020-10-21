@@ -41,7 +41,7 @@ class PartnerChoiceFakeSites(MultiAgentEnv):
 
         self.cur_its = np.array([0 for i in range(self.nb_agents)], dtype=int)
 
-        self.action_space = Discrete(1)
+        self.action_space = Discrete(2)
         self.observation_space = Box(low=0, high=self.max_action, shape=(2,), dtype=np.float64)
 
         self.site_action = np.linspace(0, self.max_action, self.nb_sites)
@@ -74,7 +74,7 @@ class PartnerChoiceFakeSites(MultiAgentEnv):
             choice = f"choice{ind:02d}"
             # If we get a investment action
             if agent_name.startswith('inv'):
-                self.inv[ind] = (action_dict[agent_name][0] + 1) / 2 * self.max_action
+                self.inv[ind] = action_dict[agent_name][0]
                 if np.random.rand() < 0.001:
                     print(self.inv[ind])
                 self.cur_opp[ind] = self._find_opp()
@@ -120,4 +120,4 @@ class PartnerChoiceFakeSites(MultiAgentEnv):
                 obs[f'choice{i:02d}'] = np.array([0, 0], dtype=np.float32)
                 reward[f'choice{i:02d}'] = 0.0
                 done[f'choice{i:02d}'] = True
-        return obs, reward, done, {}
+        return obs, reward, done, {'inv': self.inv}

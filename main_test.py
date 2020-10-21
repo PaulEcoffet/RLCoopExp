@@ -13,10 +13,11 @@ from gym.spaces import Box, Discrete
 import numpy as np
 from negotiate_model import InvestorModel
 from ray.tune.registry import register_env
-
+from pprint import pprint
+from datetime import datetime
 
 if __name__ == "__main__":
-    ray.init(local_mode=True)
+    ray.init()
     nb_agents = 1
     inv_id = ['inv' + '{:02d}'.format(i) for i in range(nb_agents)]
     choice_id = [f'choice{i:02d}' for i in range(nb_agents)]
@@ -28,32 +29,37 @@ if __name__ == "__main__":
 
     choice_act_space = Discrete(2)
     choice_obs_space = Box(np.array([0, 0], dtype=np.float32), np.array([15, 15], dtype=np.float32))
-    inv_act_space = Box(np.array([-1], dtype=np.float32), np.array([1], dtype=np.float32))
+    inv_act_space = Box(np.array([0], dtype=np.float32), np.array([15], dtype=np.float32))
     inv_obs_space = Box(np.array([0], dtype=np.float32), np.array([1], np.float32))
 
     choicemodel_dict = {
-                            "fcnet_hiddens": [3],
-                            "model":
-                                {
-                                    "custom_model": None,
-                                },
-                          }
+        "model": {
+            "fcnet_hiddens": [3],
+        },
+    }
 
     investormodel_dict = {
         "model": {
-        "custom_model": "investor_model",
-        }
+            "fcnet_hiddens": [],  # linear mapping
+        },
     }
 
-    policies = {inv_id[i]: (None, inv_obs_space, inv_act_space, investormodel_dict) for i in range(nb_agents)}
-    policies.update({choice_id[i]: (None, choice_obs_space, choice_act_space, choicemodel_dict) for i in range(nb_agents)})
+    policies = {inv_id[i]: (None, inv_obs_space, inv_act_space, investormodel_dict)
+                for i in range(nb_agents)}
+    policies.update({choice_id[i]: (None, choice_obs_space, choice_act_space, choicemodel_dict)
+                     for i in range(nb_agents)})
 
     def select_policy(agent_id):
         return agent_id
 
+    def choose_max_it(spec):
+        bad_site_prob = spec['config']['env_config']['bad_site_prob']
+        if bad_site_prob == 0:
+            return 100
+        else:
+            return int(np.ceil(1 / (1 - bad_site_prob))) * 100
+
     config = {
-        "num_gpus": 0,
-        'num_workers': 0,
         "multiagent": {
             "policies": policies,
             "policy_mapping_fn": select_policy,
@@ -62,14 +68,16 @@ if __name__ == "__main__":
         "framework": "torch",
         "no_done_at_end": True,
         "gamma": 1,
+        "env": "partner_choice",
         "env_config":
             {
-                "bad_site_prob": 0.999,
-                "max_it": 10000
+                "bad_site_prob": tune.grid_search([0, 0.99, 0.999, 0.9999]),
+                "max_it": tune.sample_from(lambda spec: choose_max_it(spec))
             }
     }
     
     trainer = PPOTrainer(env="partner_choice", config=config)
 
-    while True:
-        print(trainer.train())
+    now_str = datetime.now().strftime('%Y%m%d-%H%M%S')
+    tune.run(PPOTrainer, name="pc", config=config, stop={"training_iteration": 1_000_000}, local_dir=f"logs/{now_str}/",
+             checkpoint_at_end=True)
