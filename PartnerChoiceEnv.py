@@ -67,6 +67,7 @@ class PartnerChoiceFakeSites(MultiAgentEnv):
         obs = {}
         reward = {}
         done = {}
+        info = {}
 
         for agent_name in action_dict:
             ind = get_id(agent_name)
@@ -74,9 +75,7 @@ class PartnerChoiceFakeSites(MultiAgentEnv):
             choice = f"choice{ind:02d}"
             # If we get a investment action
             if agent_name.startswith('inv'):
-                self.inv[ind] = (action_dict[agent_name][0] + 1) / 2 * self.max_action
-                if np.random.rand() < 0.001:
-                    print(self.inv[ind])
+                self.inv[ind] = action_dict[agent_name][0]
                 self.cur_opp[ind] = self._find_opp()
                 obs[choice] = np.array([self.site_action[self.cur_opp[ind]], self.inv[ind]])
                 reward[choice] = 0  # dummy reward at init
@@ -85,39 +84,42 @@ class PartnerChoiceFakeSites(MultiAgentEnv):
 
                 # if they both agree
                 curopp = self.cur_opp[ind]
+                info[inv] = {'inv': self.inv[ind], 'other': self.site_acceptance_threshold[curopp],
+                                'accept': action_dict[choice]}
                 if action_dict[choice] == 1 and self.inv[ind] >= self.site_acceptance_threshold[curopp]\
                         and (not self.bad_site_prob != 0 or curopp != 0):  # if bad_site_prob then no nowhere
                     curpayoff = payoff(self.inv[ind], self.site_action[curopp])
-                    if np.random.rand() < 0.005:
-                        print(f"payoff({self.inv[ind]}, {self.site_action[curopp]}) = {curpayoff}")
                     # give payoff to both module and end interaction
-                    reward[agent_name] = curpayoff
-                    reward[f'inv{ind:02d}'] = curpayoff
-                    obs[agent_name] = np.array([0, 0], dtype=np.float32)
-                    done[agent_name] = True
-                    done[f'inv{ind:02d}'] = True
-                    obs[f'inv{ind:02d}'] = np.array([0], dtype=np.float32)
+                    reward[choice] = curpayoff
+                    reward[inv] = curpayoff
+                    obs[choice] = np.array([0, 0], dtype=np.float32)
+                    done[choice] = True
+                    done[inv] = True
+                    obs[inv] = np.array([0], dtype=np.float32)
                     self.cur_its[ind] = self.max_it
                 else:  # if at least one disagree
-                    done[agent_name] = False
+                    done[choice] = False
                     self.cur_opp[ind] = self._find_opp()
                     if self.new_x_each_interaction:
-                        obs[f'inv{ind:02d}'] = np.array([0], dtype=np.float32)
-                        reward[f'inv{ind:02d}'] = 0
+                        obs[inv] = np.array([0], dtype=np.float32)
+                        reward[inv] = 0
                     else:
-                        obs[f'choice{ind:02d}'] = np.array([self.site_action[self.cur_opp[ind]], self.inv[ind]],
-                                                           dtype=np.float32)
-                        reward[agent_name] = 0
+                        obs[choice] = np.array([self.site_action[self.cur_opp[ind]], self.inv[ind]],
+                                               dtype=np.float32)
+                        reward[choice] = 0
 
         done["__all__"] = all(self.cur_its == self.max_it)  # Everyone has finished
 
         # Tell everyone for each its over that it is over
         for i in range(self.nb_agents):
-            if self.cur_its[i] >= self.max_it and (f"choice{i:02d}" not in done or not done[f"choice{i:02d}"]):
-                obs[f'inv{i:02d}'] = np.array([0], dtype=np.float32)
-                reward[f'inv{i:02d}'] = 0.0
-                done[f'inv{i:02d}'] = True
-                obs[f'choice{i:02d}'] = np.array([0, 0], dtype=np.float32)
-                reward[f'choice{i:02d}'] = 0.0
-                done[f'choice{i:02d}'] = True
-        return obs, reward, done, {}
+            inv = f"inv{i:02d}"
+            choice = f"choice{i:02d}"
+            if self.cur_its[i] >= self.max_it and (choice not in done or not done[choice]):
+                obs[inv] = np.array([0], dtype=np.float32)
+                reward[inv] = 0.0
+                done[inv] = True
+                obs[choice] = np.array([0, 0], dtype=np.float32)
+                reward[choice] = 0.0
+                done[choice] = True
+
+        return obs, reward, done, info
