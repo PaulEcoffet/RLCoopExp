@@ -106,26 +106,26 @@ if __name__ == "__main__":
     }
     space = {
         "lr": hp.loguniform("lr", np.log(1e-7), np.log(0.1)),
-        "horizon": scope.int(hp.quniform("horizon", 100, 5000, q=1)),
+        "horizon": scope.int(hp.quniform("horizon", 100, 5000, q=100)),
         "num_sgd_iter": scope.int(hp.quniform("num_sgd_iter", 3, 30, q=1)),
         "train_batch_size": scope.int(hp.quniform("train_batch_size", 1024, 4000, q=1)),
         "sgd_minibatch_size": scope.int(hp.quniform("sgd_minibatch_size", 16, 1024, q=1)),
     }
     hyperopt_search = HyperOptSearch(space, metric="episode_reward_mean", mode="max")
-    hyperband = ASHAScheduler(metric="episode_reward_mean", mode="max", grace_period=10)
+    hyperband = ASHAScheduler(metric="episode_reward_mean", mode="max", grace_period=5, max_t=100)
 
     analysis = tune.run(
         "PPO",
         name="gridsearch",
         stop={
-            "training_iteration": 1000,
+            "training_iteration": 100,
         },
         config=config,
         loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/",
         search_alg=hyperopt_search,
         scheduler=hyperband,
-        num_samples=1000,
+        num_samples=200,
         verbose=1
     )
-
+    print("ending")
     analysis.trial_dataframes.to_pickle("./res.df.pkl")
