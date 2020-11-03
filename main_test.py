@@ -1,25 +1,22 @@
+from datetime import datetime
 from typing import Dict
 
-import torch
-
+import numpy as np
+import ray
+from gym.spaces import Box, Discrete
+from hyperopt import hp
 from hyperopt.pyll import scope
+from ray import tune
 from ray.rllib import RolloutWorker, BaseEnv, Policy
 from ray.rllib.agents.callbacks import DefaultCallbacks
 from ray.rllib.evaluation import MultiAgentEpisode
-from hyperopt import hp
-from ray.tune.suggest.hyperopt import HyperOptSearch
+from ray.tune.logger import TBXLogger
+from ray.tune.registry import register_env
 from ray.tune.schedulers import ASHAScheduler
+from ray.tune.suggest.hyperopt import HyperOptSearch
 
 from PartnerChoiceEnv import PartnerChoiceFakeSites
-import numpy as np
-import ray
-from ray import tune
-from ray.tune.logger import TBXLogger
 
-from gym.spaces import Box, Discrete
-from ray.tune.registry import register_env
-
-from datetime import datetime
 
 class MyCallbacks(DefaultCallbacks):
     def on_episode_start(self, *, worker: RolloutWorker, base_env: BaseEnv,
@@ -45,11 +42,13 @@ class MyCallbacks(DefaultCallbacks):
                        policies: Dict[str, Policy], episode: MultiAgentEpisode,
                        env_index: int, **kwargs):
         episode.hist_data["inv"] = episode.user_data["inv"]
+        episode.custom_metrics["inv_mean"] = np.mean(episode.user_data['inv'])
         episode.hist_data["accept"] = episode.user_data["accept"]
+        episode.custom_metrics["accept_mean"] = np.mean(episode.user_data['accept'])
 
 
 if __name__ == "__main__":
-    ray.init(local_mode=True)
+    ray.init()
     nb_agents = 1
     inv_id = ['inv' + '{:02d}'.format(i) for i in range(nb_agents)]
     choice_id = [f'choice{i:02d}' for i in range(nb_agents)]
@@ -89,8 +88,6 @@ if __name__ == "__main__":
 
 
     config = {
-        "num_gpus": 0,
-        'num_workers': 0,
         "multiagent": {
             "policies": policies,
             "policy_mapping_fn": select_policy,
