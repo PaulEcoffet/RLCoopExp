@@ -1,5 +1,7 @@
 from typing import Dict
 
+import torch
+
 from hyperopt.pyll import scope
 from ray.rllib import RolloutWorker, BaseEnv, Policy
 from ray.rllib.agents.callbacks import DefaultCallbacks
@@ -17,6 +19,7 @@ from ray.tune.logger import TBXLogger
 from gym.spaces import Box, Discrete
 from ray.tune.registry import register_env
 
+from datetime import datetime
 
 class MyCallbacks(DefaultCallbacks):
     def on_episode_start(self, *, worker: RolloutWorker, base_env: BaseEnv,
@@ -116,7 +119,7 @@ if __name__ == "__main__":
 
     analysis = tune.run(
         "PPO",
-        name="gridsearch",
+        name="gridsearch" + datetime.now().strftime("%Y%m%d-%H%M%S"),
         stop={
             "training_iteration": 100,
         },
