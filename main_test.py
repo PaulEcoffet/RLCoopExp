@@ -88,6 +88,8 @@ if __name__ == "__main__":
 
 
     config = {
+        "num_workers": 8,
+        "batch_mode": "truncate_episodes",
         "multiagent": {
             "policies": policies,
             "policy_mapping_fn": select_policy,
@@ -118,7 +120,7 @@ if __name__ == "__main__":
         "PPO",
         name="gridsearch" + datetime.now().strftime("%Y%m%d-%H%M%S"),
         stop={
-            "training_iteration": 100,
+            "episodes_total": 100_000
         },
         config=config,
         loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/",
