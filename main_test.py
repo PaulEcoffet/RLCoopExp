@@ -43,9 +43,9 @@ class MyCallbacks(DefaultCallbacks):
                        policies: Dict[str, Policy], episode: MultiAgentEpisode,
                        env_index: int, **kwargs):
         episode.hist_data["inv"] = episode.user_data["inv"]
-        episode.custom_metrics["inv_mean"] = np.mean(episode.user_data['inv'])
+        episode.custom_metrics["inv"] = np.mean(episode.user_data['inv'])
         episode.hist_data["accept"] = episode.user_data["accept"]
-        episode.custom_metrics["accept_mean"] = np.mean(episode.user_data['accept'])
+        episode.custom_metrics["accept"] = np.mean(episode.user_data['accept'])
 
 
 if __name__ == "__main__":
@@ -89,7 +89,8 @@ if __name__ == "__main__":
 
 
     config = {
-        "num_workers": 8,
+        "num_workers": 1,
+        "num_envs_per_worker": 32,
         "batch_mode": "truncate_episodes",
         "multiagent": {
             "policies": policies,
@@ -115,11 +116,13 @@ if __name__ == "__main__":
         "sgd_minibatch_size": scope.int(hp.quniform("sgd_minibatch_size", 16, 1024, q=1)),
     }
     hyperopt_search = HyperOptSearch(space, metric="episode_reward_mean", mode="max")
-    hyperband = ASHAScheduler(metric="episode_reward_mean", mode="max", grace_period=5, max_t=100)
+    hyperband = ASHAScheduler(metric="episode_reward_mean", mode="max",
+                              grace_period=10, time_attr="episodes_total", max_t=100_000)
 
+    datestr = datetime.now().strftime("%Y%m%d-%H%M%S")
     analysis = tune.run(
         "PPO",
-        name="gridsearch" + datetime.now().strftime("%Y%m%d-%H%M%S"),
+        name="gridsearch" + datestr,
         stop={
             "episodes_total": 100_000
         },
@@ -131,4 +134,4 @@ if __name__ == "__main__":
         verbose=1
     )
     print("ending")
-    analysis.trial_dataframes.to_pickle("./res.df.pkl")
+    analysis.trial_dataframes.to_pickle(f"./res.df.{datestr}.pkl")
