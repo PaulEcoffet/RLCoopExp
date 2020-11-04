@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Dict
 
+import torch
 import numpy as np
 import ray
 from gym.spaces import Box, Discrete
@@ -48,7 +49,7 @@ class MyCallbacks(DefaultCallbacks):
 
 
 if __name__ == "__main__":
-    ray.init()
+    ray.init(num_cpus=32)
     nb_agents = 1
     inv_id = ['inv' + '{:02d}'.format(i) for i in range(nb_agents)]
     choice_id = [f'choice{i:02d}' for i in range(nb_agents)]
@@ -124,7 +125,7 @@ if __name__ == "__main__":
         loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/",
         search_alg=hyperopt_search,
         scheduler=hyperband,
-        num_samples=200,
+        num_samples=300,
         verbose=1
     )
     print("ending")
