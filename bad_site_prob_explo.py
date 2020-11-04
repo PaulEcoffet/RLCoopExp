@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Dict
 
 import torch
+import multiprocessing
 import numpy as np
 import ray
 from gym.spaces import Box, Discrete
@@ -89,7 +90,8 @@ if __name__ == "__main__":
 
 
     config = {
-        "num_workers": 8,
+        "num_workers": 1,
+        "num_envs_per_worker": 32,
         "multiagent": {
             "policies": policies,
             "policy_mapping_fn": select_policy,
@@ -106,11 +108,12 @@ if __name__ == "__main__":
                 "max_it": tune.sample_from(get_it_from_prob)
             }
     }
+    date_str = datetime.now().strftime("%Y%m%d-%H%M%S")
     analysis = tune.run(
         "PPO",
-        name="badsiteprob" + datetime.now().strftime("%Y%m%d-%H%M%S"),
+        name="badsiteprob" + date_str,
         stop={
-            "training_iteration": 10000,
+            "episodes_total": 100_000
         },
         config=config,
         loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/",
@@ -118,4 +121,4 @@ if __name__ == "__main__":
         verbose=1
     )
     print("ending")
-    analysis.trial_dataframes.to_pickle("./res.df.pkl")
+    analysis.trial_dataframes.to_pickle(f"./bad_site_res.df.{date_str}.pkl")
