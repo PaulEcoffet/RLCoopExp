@@ -63,11 +63,15 @@ if __name__ == "__main__":
     inv_obs_space = Box(np.array([0], dtype=np.float32), np.array([1], np.float32))
 
     choicemodel_dict = {
-        "fcnet_hiddens": [3],
+        "model": {
+            "fcnet_hiddens": [3],
+        }
     }
 
     investormodel_dict = {
-        "fcnet_hiddens": []
+        "model": {
+            "fcnet_hiddens": []
+        }
     }
 
     policies = {inv_id[i]: (None, inv_obs_space, inv_act_space, investormodel_dict) for i in range(nb_agents)}
