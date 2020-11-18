@@ -27,12 +27,15 @@ def payoff(xi, xj):
 class PartnerChoiceFakeSites(MultiAgentEnv):
 
     def __init__(self, env_config):
+        if "bad_site_prob" in env_config:
+            raise ValueError("deprecated key bad_site_prob")
+
         self.nb_agents = env_config.get("nb_agents", 1)
         self.nb_sites = env_config.get("nb_sites", 31)
         self.max_it = env_config.get("max_it", 100)
         self.new_x_each_interaction = env_config.get("new_x_each_interaction", True)
         self.max_action = env_config.get("max_action", 15.0)
-        self.bad_site_prob = env_config.get("bad_site_prob", 0)
+        self.good_site_prob = env_config.get("good_site_prob", 1)
         self.iteration_count = 0
         self.agents_names = ['inv' + '{:02d}'.format(i) for i in range(self.nb_agents)]
         self.agents_names += ['choice' + '{:02d}'.format(i) for i in range(self.nb_agents)]
@@ -56,9 +59,9 @@ class PartnerChoiceFakeSites(MultiAgentEnv):
         }
 
     def _find_opp(self):
-        if self.bad_site_prob == 0:
+        if self.good_site_prob == 1:
             return np.random.randint(self.nb_sites)
-        elif np.random.rand() < self.bad_site_prob:
+        elif np.random.rand() < 1 - self.good_site_prob:
             return 0
         else:
             return np.random.randint(1, self.nb_sites)
@@ -87,7 +90,7 @@ class PartnerChoiceFakeSites(MultiAgentEnv):
                 info[inv] = {'inv': self.inv[ind], 'other': self.site_acceptance_threshold[curopp],
                                 'accept': action_dict[choice]}
                 if action_dict[choice] == 1 and self.inv[ind] >= self.site_acceptance_threshold[curopp]\
-                        and (not self.bad_site_prob != 0 or curopp != 0):  # if bad_site_prob then no nowhere
+                        and (not self.good_site_prob != 1 or curopp != 0):  # if good_site_prob then no nowhere
                     curpayoff = payoff(self.inv[ind], self.site_action[curopp])
                     # give payoff to both module and end interaction
                     reward[choice] = curpayoff

@@ -49,7 +49,7 @@ class MyCallbacks(DefaultCallbacks):
 
 
 if __name__ == "__main__":
-    ray.init(num_cpus=32)
+    ray.init(num_cpus=24)
     nb_agents = 1
     inv_id = ['inv' + '{:02d}'.format(i) for i in range(nb_agents)]
     choice_id = [f'choice{i:02d}' for i in range(nb_agents)]
@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     config = {
         "num_workers": 1,
-        "num_envs_per_worker": 32,
+        "num_envs_per_worker": 16,
         "batch_mode": "truncate_episodes",
         "multiagent": {
             "policies": policies,
@@ -104,8 +104,8 @@ if __name__ == "__main__":
         "env": "partner_choice",
         "env_config":
             {
-                "bad_site_prob": 0,
-                "max_it": 100
+                "bad_site_prob": 0.9,
+                "max_it": 1000
             }
     }
     space = {
@@ -117,21 +117,22 @@ if __name__ == "__main__":
     }
     hyperopt_search = HyperOptSearch(space, metric="episode_reward_mean", mode="max")
     hyperband = ASHAScheduler(metric="episode_reward_mean", mode="max",
-                              grace_period=10, time_attr="episodes_total", max_t=100_000)
+                              grace_period=20_000, time_attr="episodes_total", max_t=40_000)
 
     datestr = datetime.now().strftime("%Y%m%d-%H%M%S")
     analysis = tune.run(
         "PPO",
-        name="gridsearch" + datestr,
+        name="gridsearchbad10" + datestr,
         stop={
-            "episodes_total": 100_000
+            "episodes_total": 40_000
         },
         config=config,
         loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/",
         search_alg=hyperopt_search,
         scheduler=hyperband,
-        num_samples=300,
-        verbose=1
+        num_samples=100,
+        verbose=1,
+        raise_on_failed_trial=False
     )
     print("ending")
     analysis.trial_dataframes.to_pickle(f"./res.df.{datestr}.pkl")

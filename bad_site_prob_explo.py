@@ -81,17 +81,13 @@ if __name__ == "__main__":
 
 
     def get_it_from_prob(spec):
-        bad_prob = spec['config']['env_config']['bad_site_prob']
+        good_site_prob = spec['config']['env_config']['good_site_prob']
         base_it = 100
-        if bad_prob == 0:
-            return base_it
-        else:
-            return np.round(1 / (1 - bad_prob)) * base_it
+        return np.round(1 / good_site_prob) * base_it
 
 
     config = {
-        "num_workers": 1,
-        "num_envs_per_worker": 32,
+        "num_envs_per_worker": 16,
         "multiagent": {
             "policies": policies,
             "policy_mapping_fn": select_policy,
@@ -104,21 +100,23 @@ if __name__ == "__main__":
         "env": "partner_choice",
         "env_config":
             {
-                "bad_site_prob": tune.grid_search([0, 0.5, 0.9, 0.99, 0.999, 0.9999]),
+                #"good_site_prob": tune.grid_search([1, 0.5, 0.3, 0.2, 0.1]),
+                "good_site_prob": tune.grid_search([0.3, 0.2, 0.1]),
                 "max_it": tune.sample_from(get_it_from_prob)
             }
     }
+
     date_str = datetime.now().strftime("%Y%m%d-%H%M%S")
     analysis = tune.run(
         "PPO",
-        name="badsiteprob" + date_str,
+        name="goodsiteprob_" + date_str,
         stop={
-            "episodes_total": 100_000
+            "episodes_total": 1000000
         },
         config=config,
-        loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/",
+        loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/megarunlong",
         num_samples=10,
         verbose=1
     )
     print("ending")
-    analysis.trial_dataframes.to_pickle(f"./bad_site_res.df.{date_str}.pkl")
+    analysis.trial_dataframes.to_pickle(f"./good_site_res.df.{date_str}.pkl")
