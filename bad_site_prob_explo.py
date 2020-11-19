@@ -18,77 +18,11 @@ from ray.tune.schedulers import ASHAScheduler
 from ray.tune.suggest.hyperopt import HyperOptSearch
 
 from PartnerChoiceEnv import PartnerChoiceFakeSites
-
-
-class MyCallbacks(DefaultCallbacks):
-    def on_episode_start(self, *, worker: RolloutWorker, base_env: BaseEnv,
-                         policies: Dict[str, Policy],
-                         episode: MultiAgentEpisode, env_index: int, **kwargs):
-        episode.user_data["inv"] = []
-        episode.user_data["accept"] = []
-        episode.hist_data["inv"] = []
-        episode.hist_data["accept"] = []
-
-    def on_episode_step(self, *, worker: RolloutWorker, base_env: BaseEnv,
-                        episode: MultiAgentEpisode, env_index: int, **kwargs):
-        info = episode.last_info_for("inv00")
-        if info and "inv" in info:
-            inv = info["inv"]
-            accept = info["accept"]
-            other = info["other"]
-            if accept:
-                episode.user_data["accept"].append(other)
-            episode.user_data["inv"].append(inv)
-
-    def on_episode_end(self, *, worker: RolloutWorker, base_env: BaseEnv,
-                       policies: Dict[str, Policy], episode: MultiAgentEpisode,
-                       env_index: int, **kwargs):
-        episode.hist_data["inv"] = episode.user_data["inv"]
-        episode.custom_metrics["inv_mean"] = np.mean(episode.user_data['inv'])
-        episode.hist_data["accept"] = episode.user_data["accept"]
-        episode.custom_metrics["accept_mean"] = np.mean(episode.user_data['accept'])
-
+from main_test import MyCallbacks, get_it_from_prob, select_policy, init_setup
 
 if __name__ == "__main__":
-    ray.init(num_cpus=32)
-    nb_agents = 1
-    inv_id = ['inv' + '{:02d}'.format(i) for i in range(nb_agents)]
-    choice_id = [f'choice{i:02d}' for i in range(nb_agents)]
-
-    register_env("partner_choice",
-                 lambda config: PartnerChoiceFakeSites(config))
-
-    choice_act_space = Discrete(2)
-    choice_obs_space = Box(np.array([0, 0], dtype=np.float32), np.array([15, 15], dtype=np.float32))
-    inv_act_space = Box(np.array([0], dtype=np.float32), np.array([15], dtype=np.float32))
-    inv_obs_space = Box(np.array([0], dtype=np.float32), np.array([1], np.float32))
-
-    choicemodel_dict = {
-        "model": {
-            "fcnet_hiddens": [3],
-        }
-    }
-
-    investormodel_dict = {
-        "model": {
-            "fcnet_hiddens": []
-        }
-    }
-
-    policies = {inv_id[i]: (None, inv_obs_space, inv_act_space, investormodel_dict) for i in range(nb_agents)}
-    policies.update(
-        {choice_id[i]: (None, choice_obs_space, choice_act_space, choicemodel_dict) for i in range(nb_agents)})
-
-
-    def select_policy(agent_id):
-        return agent_id
-
-
-    def get_it_from_prob(spec):
-        good_site_prob = spec['config']['env_config']['good_site_prob']
-        base_it = 100
-        return np.round(1 / good_site_prob) * base_it
-
+    ray.init(num_cpus=24)
+    policies = init_setup()
 
     config = {
         "num_envs_per_worker": 16,
@@ -115,11 +49,11 @@ if __name__ == "__main__":
         "PPO",
         name="goodsiteprob_" + date_str,
         stop={
-            "episodes_total": 1000000
+            "episodes_total": 200000
         },
         config=config,
-        loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/megarunlong",
-        num_samples=10,
+        loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/paperrun/ppo/",
+        num_samples=24,
         verbose=1
     )
     print("ending")

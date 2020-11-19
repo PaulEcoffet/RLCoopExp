@@ -37,6 +37,7 @@ class PartnerChoiceFakeSites(MultiAgentEnv):
         self.max_action = env_config.get("max_action", 15.0)
         self.good_site_prob = env_config.get("good_site_prob", 1)
         self.iteration_count = 0
+        self.true_site = [True for i in range(self.nb_agents)]
         self.agents_names = ['inv' + '{:02d}'.format(i) for i in range(self.nb_agents)]
         self.agents_names += ['choice' + '{:02d}'.format(i) for i in range(self.nb_agents)]
         self.inv = [0.0 for i in range(self.nb_agents)]
@@ -59,12 +60,12 @@ class PartnerChoiceFakeSites(MultiAgentEnv):
         }
 
     def _find_opp(self):
-        if self.good_site_prob == 1:
-            return np.random.randint(self.nb_sites)
-        elif np.random.rand() < 1 - self.good_site_prob:
-            return 0
+        true_site = True
+        if np.random.rand() < 1 - self.good_site_prob:
+            true_site = False
+            return 0, true_site
         else:
-            return np.random.randint(1, self.nb_sites)
+            return np.random.randint(1, self.nb_sites), true_site
 
     def step(self, action_dict):
         obs = {}
@@ -79,18 +80,18 @@ class PartnerChoiceFakeSites(MultiAgentEnv):
             # If we get a investment action
             if agent_name.startswith('inv'):
                 self.inv[ind] = action_dict[agent_name][0]
-                self.cur_opp[ind] = self._find_opp()
+                self.cur_opp[ind], self.true_site[ind] = self._find_opp()
                 obs[choice] = np.array([self.site_action[self.cur_opp[ind]], self.inv[ind]])
                 reward[choice] = 0  # dummy reward at init
             else:  # if it's a choice action
                 self.cur_its[ind] += 1
 
-                # if they both agree
                 curopp = self.cur_opp[ind]
                 info[inv] = {'inv': self.inv[ind], 'other': self.site_acceptance_threshold[curopp],
                                 'accept': action_dict[choice]}
+                # if they both agree
                 if action_dict[choice] == 1 and self.inv[ind] >= self.site_acceptance_threshold[curopp]\
-                        and (not self.good_site_prob != 1 or curopp != 0):  # if good_site_prob then no nowhere
+                        and self.true_site[ind]:  # no impact if it's not a true site
                     curpayoff = payoff(self.inv[ind], self.site_action[curopp])
                     # give payoff to both module and end interaction
                     reward[choice] = curpayoff
@@ -100,7 +101,7 @@ class PartnerChoiceFakeSites(MultiAgentEnv):
                     done[inv] = True
                     obs[inv] = np.array([0], dtype=np.float32)
                     self.cur_its[ind] = self.max_it
-                else:  # if at least one disagree
+                else:  # if at least one disagree or not a real site
                     done[choice] = False
                     self.cur_opp[ind] = self._find_opp()
                     if self.new_x_each_interaction:
