@@ -8,7 +8,8 @@ from ray.rllib.evaluation import collect_metrics
 from ray.rllib.models import ModelCatalog
 from ray.rllib.policy import build_torch_policy
 from ray.rllib.utils.filter import get_filter
-from ray.tune import register_env, tune
+from ray.tune import register_env
+from ray import tune
 import ray.rllib.agents.es.es
 import numpy as np
 from ray.tune.logger import TBXLogger
