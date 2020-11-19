@@ -23,7 +23,7 @@ from main_test import MyCallbacks, get_it_from_prob, select_policy, init_setup
 import argparse
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser
+    parser = argparse.ArgumentParser()
     parser.add_argument("-e", "--episode", type=int, default=200000)
     parser.add_argument("goodprob", type=float, nargs="+")
     outparse = parser.parse_args()

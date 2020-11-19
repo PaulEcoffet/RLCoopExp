@@ -197,7 +197,7 @@ def train(config, reporter):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser
+    parser = argparse.ArgumentParser()
     parser.add_argument("-e", "--episode", type=int, default=200000)
     parser.add_argument("goodprob", type=float, nargs="+")
     outparse = parser.parse_args()
