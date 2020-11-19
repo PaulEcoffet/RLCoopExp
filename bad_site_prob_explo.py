@@ -38,8 +38,7 @@ if __name__ == "__main__":
         "env": "partner_choice",
         "env_config":
             {
-                #"good_site_prob": tune.grid_search([1, 0.5, 0.3, 0.2, 0.1]),
-                "good_site_prob": tune.grid_search([0.3, 0.2, 0.1]),
+                "good_site_prob": tune.grid_search([1, 0.5, 0.3, 0.2, 0.1, 0.01]),
                 "max_it": tune.sample_from(get_it_from_prob)
             }
     }

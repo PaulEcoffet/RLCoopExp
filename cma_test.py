@@ -15,7 +15,7 @@ from ray.tune.logger import TBXLogger
 import torch
 
 from PartnerChoiceEnv import PartnerChoiceFakeSites
-from main_test import select_policy
+from main_test import select_policy, get_it_from_prob
 
 
 def before_init(policy, observation_space, action_space, config):
@@ -245,8 +245,8 @@ if __name__ == "__main__":
         "env": "partner_choice",
         "env_config":
             {
-                "good_site_prob": tune.grid_search([1, 0.5, 0.3, 0.2, 0.1, 0.01, 0.001]),
-                "max_it": 10000
+                "good_site_prob": tune.grid_search([1, 0.5, 0.3, 0.2, 0.1, 0.01]),
+                "max_it": tune.sample_from(get_it_from_prob)
             }
     }
 
@@ -255,12 +255,12 @@ if __name__ == "__main__":
         train,
         name="goodsiteprob_" + date_str,
         stop={
-            "episodes_total": 100_000
+            "episodes_total": 200000
         },
         config=config,
         loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/paperrun/cma/",
-        num_samples=1,
-        verbose=3
+        num_samples=24,
+        verbose=1
     )
     print("ending")
     #analysis.trial_dataframes.to_pickle(f"./good_site_res.df.{date_str}.pkl")
