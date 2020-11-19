@@ -263,4 +263,4 @@ if __name__ == "__main__":
         verbose=1
     )
     print("ending")
-    #analysis.trial_dataframes.to_pickle(f"./good_site_res.df.{date_str}.pkl")
+    analysis.trial_dataframes.to_pickle(f"./good_site_res_cma.df.{date_str}.pkl")
