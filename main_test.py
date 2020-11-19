@@ -24,12 +24,9 @@ def select_policy(agent_id):
 
 
 def get_it_from_prob(spec):
-    bad_prob = spec['config']['env_config']['bad_site_prob']
+    good_prob = spec['config']['env_config']['good_site_prob']
     base_it = 100
-    if bad_prob == 0:
-        return base_it
-    else:
-        return np.round(1 / (1 - bad_prob)) * base_it
+    return np.round(1 / good_prob) * base_it
 
 
 class MyCallbacks(DefaultCallbacks):

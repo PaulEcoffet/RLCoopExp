@@ -252,7 +252,7 @@ if __name__ == "__main__":
         "env": "partner_choice",
         "env_config":
             {
-                "good_site_prob": tune.grid_search([outparse.goodprob]),
+                "good_site_prob": tune.grid_search(outparse.goodprob),
                 "max_it": tune.sample_from(get_it_from_prob)
             }
     }
