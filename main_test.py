@@ -89,7 +89,7 @@ def init_setup():
 
 
 if __name__ == "__main__":
-    ray.init(cpu=32)
+    ray.init(num_cpus=32)
     policies = init_setup()
 
     config = {

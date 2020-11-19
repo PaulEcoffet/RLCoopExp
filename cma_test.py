@@ -202,7 +202,7 @@ if __name__ == "__main__":
     parser.add_argument("goodprob", type=float, nargs="+")
     outparse = parser.parse_args()
 
-    ray.init(cpu=24)
+    ray.init(num_cpus=24)
     nb_agents = 1
     inv_id = ['inv' + '{:02d}'.format(i) for i in range(nb_agents)]
     choice_id = [f'choice{i:02d}' for i in range(nb_agents)]
