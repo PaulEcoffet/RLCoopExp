@@ -1,6 +1,6 @@
 #PBS -N rl_hyperparam
 #PBS -l walltime=124:00:00
-#PBS -l nodes=1:ppn=24
+#PBS -l nodes=1:ppn=32
 #PBS -m n
 #PBS -d /home/ecoffet/robocoop/RLCoopExp/
 

@@ -1,3 +1,4 @@
+import argparse
 from collections import defaultdict
 from datetime import datetime
 
@@ -196,6 +197,11 @@ def train(config, reporter):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser
+    parser.add_argument("-e", "--episode", type=int, default=200000)
+    parser.add_argument("goodprob", type=float, nargs="+")
+    outparse = parser.parse_args()
+
     ray.init(cpu=24)
     nb_agents = 1
     inv_id = ['inv' + '{:02d}'.format(i) for i in range(nb_agents)]
@@ -246,7 +252,7 @@ if __name__ == "__main__":
         "env": "partner_choice",
         "env_config":
             {
-                "good_site_prob": tune.grid_search([1, 0.5, 0.3, 0.2, 0.1, 0.01]),
+                "good_site_prob": tune.grid_search([outparse.goodprob]),
                 "max_it": tune.sample_from(get_it_from_prob)
             }
     }
@@ -256,10 +262,10 @@ if __name__ == "__main__":
         train,
         name="goodsiteprob_" + date_str,
         stop={
-            "episodes_total": 200000
+            "episodes_total": outparse.episode
         },
         config=config,
-        loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/paperrun/cma/",
+        loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/paperrun/e"+str(outparse.episode)+"cma/",
         num_samples=24,
         verbose=1
     )
