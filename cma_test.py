@@ -113,7 +113,8 @@ def train(config, reporter):
         best[key] = solutions[key][0]
 
     timestep_total = 0
-    for i_episode in range(100000):
+    i_episode = 0
+    while True:
         # set the solutions
         for key in policies:
             policies[key].set_flat_weights(solutions[key][counter[key]])
@@ -150,50 +151,54 @@ def train(config, reporter):
                 counter[key] = 0
 
         if i_episode % 100 == 0 and i_episode != 0:
-            reward_through_eval = []
-            inv_through_eval = []
-            accept_through_eval = []
-            stepcount_through_eval = []
-            for _ in range(10):
-                # set the solutions
-                for key in policies:
-                    policies[key].set_flat_weights(best[key])
-                # test env
-                obs = env.reset()
-                stepcount = 0
-                done = {"__all__": False}
-                totrewards = defaultdict(lambda: 0)
-                while not done["__all__"]:
-                    stepcount +=1
-                    act = {}
-                    for key in obs:
-                        act[key] = policies[key].compute_actions([obs[key]])[0][0]
-                    if "inv00" in act:
-                        inv_through_eval.append(act["inv00"])
-                    obs, reward, done, info = env.step(act)
-                    true_info = info.get("inv00", None)
-                    if true_info and "accept" in true_info:
-                        inv = true_info["inv"]
-                        accept = true_info["accept"]
-                        other = true_info["other"]
-                        if accept and inv >= other:
-                            accept_through_eval.append(other)
-                    for key in reward:
-                        totrewards[key] += reward[key]
-                reward_through_eval.append(totrewards["inv00"])
-                stepcount_through_eval.append(stepcount)
+            evaluate(best, env, i_episode, policies, reporter, timestep_total)
+        i_episode += 1
 
-            reporter(
-                episodes_total=i_episode,
-                timesteps_total=timestep_total,
-                episode_reward_max=np.max(reward_through_eval),
-                episode_reward_min=np.min(reward_through_eval),
-                episode_reward_mean=np.mean(reward_through_eval),
-                episode_len_mean=np.mean(stepcount_through_eval),
-                custom_metrics={"inv": np.mean(inv_through_eval), "accept": np.mean(accept_through_eval),
-                                "good_site_prob": env.good_site_prob},
-                hist_stats=dict(inv=inv_through_eval, accept=accept_through_eval)
-                )
+
+def evaluate(best, env, i_episode, policies, reporter, timestep_total):
+    reward_through_eval = []
+    inv_through_eval = []
+    accept_through_eval = []
+    stepcount_through_eval = []
+    for _ in range(10):
+        # set the solutions
+        for key in policies:
+            policies[key].set_flat_weights(best[key])
+        # test env
+        obs = env.reset()
+        stepcount = 0
+        done = {"__all__": False}
+        totrewards = defaultdict(lambda: 0)
+        while not done["__all__"]:
+            stepcount += 1
+            act = {}
+            for key in obs:
+                act[key] = policies[key].compute_actions([obs[key]])[0][0]
+            if "inv00" in act:
+                inv_through_eval.append(act["inv00"])
+            obs, reward, done, info = env.step(act)
+            true_info = info.get("inv00", None)
+            if true_info and "accept" in true_info:
+                inv = true_info["inv"]
+                accept = true_info["accept"]
+                other = true_info["other"]
+                if accept and inv >= other:
+                    accept_through_eval.append(other)
+            for key in reward:
+                totrewards[key] += reward[key]
+        reward_through_eval.append(totrewards["inv00"])
+        stepcount_through_eval.append(stepcount)
+    reporter(
+        episodes_total=i_episode,
+        timesteps_total=timestep_total,
+        episode_reward_max=np.max(reward_through_eval),
+        episode_reward_min=np.min(reward_through_eval),
+        episode_reward_mean=np.mean(reward_through_eval),
+        episode_len_mean=np.mean(stepcount_through_eval),
+        custom_metrics={"inv": np.mean(inv_through_eval), "accept": np.mean(accept_through_eval),
+                        "good_site_prob": env.good_site_prob},
+        hist_stats=dict(inv=inv_through_eval, accept=accept_through_eval)
+    )
 
 
 if __name__ == "__main__":

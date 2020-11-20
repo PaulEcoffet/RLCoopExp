@@ -41,6 +41,8 @@ if __name__ == "__main__":
         "framework": "torch",
         "no_done_at_end": True,
         "gamma": 1,
+        "lr": 5e-3,
+        "num_sgd_iter": 10,
         "callbacks": MyCallbacks,
         "env": "partner_choice",
         "env_config":
