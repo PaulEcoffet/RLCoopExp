@@ -15,13 +15,14 @@ def get_id(agent_name):
         raise ValueError
 
 
-def payoff(xi, xj):
-    a = 5
-    b = 5
+def payoff(xi, xj, *, a=5, b=5, temp=None):
     pg = a*xi
     pd = b*xj
     c = 0.5*xi**2
-    return pg + pd - c
+    tot = pg + pd - c
+    if temp is not None:
+        tot = np.exp(tot * temp)
+    return tot
 
 
 class PartnerChoiceFakeSites(MultiAgentEnv):
