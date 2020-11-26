@@ -25,10 +25,11 @@ import argparse
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-e", "--episode", type=int, default=200000)
-    parser.add_argument("goodprob", type=float, nargs="+")
+    parser.add_argument("goodprob", type=float, nargs="*", default=[1])
     outparse = parser.parse_args()
 
     ray.init(num_cpus=24)
+    #ray.init(local_mode=True, num_cpus=3)
     policies = init_setup()
 
     config = {

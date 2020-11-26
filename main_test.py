@@ -29,10 +29,25 @@ def get_it_from_prob(spec):
     return np.round(1 / good_prob) * base_it
 
 
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
 class MyCallbacks(DefaultCallbacks):
     def on_episode_start(self, *, worker: RolloutWorker, base_env: BaseEnv,
                          policies: Dict[str, Policy],
                          episode: MultiAgentEpisode, env_index: int, **kwargs):
+        for key in policies:
+            print("*"*40)
+            print(key)
+            print("** num params **")
+            try:
+                print("precompute", policies[key].num_params)
+            except AttributeError:
+                print(count_parameters(policies[key].model))
+            print("*******")
+            print(policies[key].model)
+            print("*"*40)
+
         episode.user_data["inv"] = []
         episode.user_data["accept"] = []
         episode.hist_data["inv"] = []

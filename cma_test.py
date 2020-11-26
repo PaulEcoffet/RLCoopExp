@@ -1,6 +1,9 @@
 import argparse
+import os
+import pickle
 from collections import defaultdict
 from datetime import datetime
+from typing import Dict, Any
 
 import cma
 import ray
@@ -151,8 +154,17 @@ def train(config, reporter):
                 counter[key] = 0
 
         if i_episode % 100 == 0 and i_episode != 0:
+            if i_episode % 1000 == 0:
+                save_model(best, i_episode, reporter.logdir)
             evaluate(best, env, i_episode, policies, reporter, timestep_total)
         i_episode += 1
+
+
+def save_model(best: Dict[str, np.ndarray], i_episode:int, logdir: str):
+    checkpoint_dir = logdir + "/checkpoint" + str(i_episode) + "/"
+    os.makedirs(checkpoint_dir, exist_ok=True)
+    with open(checkpoint_dir + "/best.pkl", "wb") as f:
+        pickle.dump(best, f)
 
 
 def evaluate(best, env, i_episode, policies, reporter, timestep_total):
@@ -201,25 +213,22 @@ def evaluate(best, env, i_episode, policies, reporter, timestep_total):
     )
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-e", "--episode", type=int, default=200000)
-    parser.add_argument("goodprob", type=float, nargs="+")
+    parser.add_argument("goodprob", type=float, nargs="*", default=[1])
     outparse = parser.parse_args()
-
     ray.init(num_cpus=24)
+    #ray.init(local_mode=True, num_cpus=1)
     nb_agents = 1
     inv_id = ['inv' + '{:02d}'.format(i) for i in range(nb_agents)]
     choice_id = [f'choice{i:02d}' for i in range(nb_agents)]
-
     register_env("partner_choice",
                  lambda config: PartnerChoiceFakeSites(config))
-
     choice_act_space = Discrete(2)
     choice_obs_space = Box(np.array([0, 0], dtype=np.float32), np.array([15, 15], dtype=np.float32))
     inv_act_space = Box(np.array([0], dtype=np.float32), np.array([15], dtype=np.float32))
     inv_obs_space = Box(np.array([0], dtype=np.float32), np.array([1], np.float32))
-
     choicemodel_dict = {
         "model": {
             "fcnet_hiddens": [3],
@@ -227,7 +236,6 @@ if __name__ == "__main__":
         },
         "use_critic": False
     }
-
     investormodel_dict = {
         "model": {
             "fcnet_hiddens": [],
@@ -236,12 +244,9 @@ if __name__ == "__main__":
         },
         "use_critic": False
     }
-
     policies = {inv_id[i]: (None, inv_obs_space, inv_act_space, investormodel_dict) for i in range(nb_agents)}
     policies.update(
         {choice_id[i]: (None, choice_obs_space, choice_act_space, choicemodel_dict) for i in range(nb_agents)})
-
-
     config = {
         "num_envs_per_worker": 1,
         "num_workers": 0,
@@ -253,7 +258,7 @@ if __name__ == "__main__":
         "framework": "torch",
         "no_done_at_end": True,
         "gamma": 1,
-        #"callbacks": MyCallbacks,
+        # "callbacks": MyCallbacks,
         "env": "partner_choice",
         "env_config":
             {
@@ -261,7 +266,6 @@ if __name__ == "__main__":
                 "max_it": tune.sample_from(get_it_from_prob)
             }
     }
-
     date_str = datetime.now().strftime("%Y%m%d-%H%M%S")
     analysis = tune.run(
         train,
@@ -270,9 +274,13 @@ if __name__ == "__main__":
             "episodes_total": outparse.episode
         },
         config=config,
-        loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/paperrun/e"+str(outparse.episode)+"cma/",
+        loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/paperrun/e" + str(outparse.episode) + "cma/",
         num_samples=24,
         verbose=1
     )
     print("ending")
     analysis.trial_dataframes.to_pickle(f"./good_site_res_cma.df.{date_str}.pkl")
+
+
+if __name__ == "__main__":
+    main()
