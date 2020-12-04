@@ -187,7 +187,8 @@ def evaluate(best, env, i_episode, policies, reporter, timestep_total):
             stepcount += 1
             act = {}
             for key in obs:
-                act[key] = policies[key].compute_actions([obs[key]])[0][0]
+                act[key] = clip_action(policies[key].compute_actions([obs[key]])[0],
+                                       policies[key].action_space_struct)[0]
             if "inv00" in act:
                 inv_through_eval.append(act["inv00"])
             obs, reward, done, info = env.step(act)
