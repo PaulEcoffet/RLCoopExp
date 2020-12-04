@@ -10,6 +10,7 @@ import ray
 from gym.spaces import Discrete, Box
 from ray.rllib.evaluation import collect_metrics
 from ray.rllib.models import ModelCatalog
+from ray.rllib.policy.policy import clip_action
 from ray.rllib.policy import build_torch_policy
 from ray.rllib.utils.filter import get_filter
 from ray.tune import register_env
@@ -129,7 +130,8 @@ def train(config, reporter):
             timestep_total += 1
             act = {}
             for key in obs:
-                act[key] = policies[key].compute_actions([obs[key]])[0][0]
+                act[key] = clip_action(policies[key].compute_actions([obs[key]])[0],
+                                       policies[key].action_space_struct)[0]
             obs, reward, done, info = env.step(act)
             for key in reward:
                 totrewards[key] += reward[key]
@@ -185,7 +187,8 @@ def evaluate(best, env, i_episode, policies, reporter, timestep_total):
             stepcount += 1
             act = {}
             for key in obs:
-                act[key] = policies[key].compute_actions([obs[key]])[0][0]
+                act[key] = clip_action(policies[key].compute_actions([obs[key]])[0],
+                                       policies[key].action_space_struct)[0]
             if "inv00" in act:
                 inv_through_eval.append(act["inv00"])
             obs, reward, done, info = env.step(act)

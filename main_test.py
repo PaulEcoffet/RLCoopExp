@@ -87,11 +87,13 @@ def init_setup():
     choicemodel_dict = {
         "model": {
             "fcnet_hiddens": [3],
+            "max_seq_len": 9999999
         }
     }
     investormodel_dict = {
         "model": {
-            "fcnet_hiddens": []
+            "fcnet_hiddens": [],
+            "max_seq_len": 9999999
         }
     }
     policies = {inv_id[i]: (None, inv_obs_space, inv_act_space, investormodel_dict) for i in range(nb_agents)}
