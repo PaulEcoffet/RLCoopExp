@@ -7,7 +7,7 @@
 
 python=/home/ecoffet/anaconda3/envs/rlcoop/bin/python
 
-TEST=(1 0.1 0.01)
+TEST=(1 0.1 0.5 0.2)
 
 ID=$((PBS_ARRAYID-1))
 
