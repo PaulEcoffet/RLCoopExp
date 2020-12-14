@@ -61,7 +61,7 @@ if __name__ == "__main__":
             "episodes_total": outparse.episode
         },
         config=config,
-        loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/paperrun/e"+str(outparse.episode)+"/ppo/",
+        loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/paperrun2/e"+str(outparse.episode)+"/ppobiglr/0.1rerun/",
         num_samples=24,
         verbose=1
     )
