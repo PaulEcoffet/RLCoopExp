@@ -103,25 +103,29 @@ register_env("partner_choice",
 def train(config, reporter):
     env = PartnerChoiceFakeSites(config['env_config'])
     policies = {}
-    es = {}
-    solutions = {}
-    tell = {}
-    counter = {}
-    best = {}
+    solutions = None
+    tell = None
+    counter = None
+    best = None
+    rangeparams = dict()
+    inparam = 0
     for key, params in config["multiagent"]["policies"].items():
         policies[key] = CMAESTorchPolicy(*params[1:])
-        es[key] = cma.CMAEvolutionStrategy(np.zeros(policies[key].num_params), 1)
-        solutions[key] = es[key].ask()
-        tell[key] = np.zeros(len(solutions[key]))
-        counter[key] = 0
-        best[key] = solutions[key][0]
+        rangeparams[key] = range(inparam, inparam + policies[key].num_params)
+        inparam = inparam + policies[key].num_params
+    counter = 0
+
+    es = cma.CMAEvolutionStrategy(np.zeros(inparam), 1)
+    solutions = es.ask()
+    tell = np.zeros(len(solutions))
+    best = solutions[0]
 
     timestep_total = 0
     i_episode = 0
     while True:
         # set the solutions
         for key in policies:
-            policies[key].set_flat_weights(solutions[key][counter[key]])
+            policies[key].set_flat_weights(solutions[counter][rangeparams[key]])
         # test env
         obs = env.reset()
         done = {"__all__": False}
@@ -139,9 +143,9 @@ def train(config, reporter):
 
         should_evaluate = False
         for key in policies:
-            tell[key][counter[key]] = totrewards[key]
-            counter[key] += 1
-            if counter[key] == len(solutions[key]):
+            tell[counter] = totrewards[key]
+            counter += 1
+            if counter == len(solutions):
                 # print("*" * 30)
                 # print("episode", _)
                 # print("new batch for", key)
@@ -149,16 +153,16 @@ def train(config, reporter):
                 # print("mean score was", np.mean(tell[key]))
                 # print("pop size for", key, "is", len(solutions[key]))
                 # print("genome size for", key, "is", len(solutions[key][0]))
-                best.update({key: solutions[key][np.argmax(tell[key])]})
-                es[key].tell(solutions[key], [-x for x in tell[key]])
-                solutions[key] = es[key].ask()
-                tell[key] = np.zeros(len(solutions[key]))
-                counter[key] = 0
+                best = solutions[np.argmax(tell)]
+                es.tell(solutions, [-x for x in tell])
+                solutions = es.ask()
+                tell = np.zeros(len(solutions))
+                counter = 0
 
         if i_episode % 100 == 0 and i_episode != 0:
             if i_episode % 1000 == 0:
                 save_model(best, i_episode, reporter.logdir)
-            evaluate(best, env, i_episode, policies, reporter, timestep_total)
+            evaluate(best, rangeparams, env, i_episode, policies, reporter, timestep_total)
         i_episode += 1
 
 
@@ -169,7 +173,7 @@ def save_model(best: Dict[str, np.ndarray], i_episode:int, logdir: str):
         pickle.dump(best, f)
 
 
-def evaluate(best, env, i_episode, policies, reporter, timestep_total):
+def evaluate(best, rangeparams, env, i_episode, policies, reporter, timestep_total):
     reward_through_eval = []
     inv_through_eval = []
     accept_through_eval = []
@@ -177,7 +181,7 @@ def evaluate(best, env, i_episode, policies, reporter, timestep_total):
     for _ in range(10):
         # set the solutions
         for key in policies:
-            policies[key].set_flat_weights(best[key])
+            policies[key].set_flat_weights(best[rangeparams[key]])
         # test env
         obs = env.reset()
         stepcount = 0
@@ -221,8 +225,8 @@ def main():
     parser.add_argument("-e", "--episode", type=int, default=200000)
     parser.add_argument("goodprob", type=float, nargs="*", default=[1])
     outparse = parser.parse_args()
-    ray.init(num_cpus=24)
-    #ray.init(local_mode=True, num_cpus=1)
+    #ray.init(num_cpus=24)
+    ray.init(local_mode=True, num_cpus=1)
     nb_agents = 1
     inv_id = ['inv' + '{:02d}'.format(i) for i in range(nb_agents)]
     choice_id = [f'choice{i:02d}' for i in range(nb_agents)]
