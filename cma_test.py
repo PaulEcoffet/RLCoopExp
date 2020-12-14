@@ -225,8 +225,8 @@ def main():
     parser.add_argument("-e", "--episode", type=int, default=200000)
     parser.add_argument("goodprob", type=float, nargs="*", default=[1])
     outparse = parser.parse_args()
-    #ray.init(num_cpus=24)
-    ray.init(local_mode=True, num_cpus=1)
+    ray.init(num_cpus=24)
+    #ray.init(local_mode=True, num_cpus=1)
     nb_agents = 1
     inv_id = ['inv' + '{:02d}'.format(i) for i in range(nb_agents)]
     choice_id = [f'choice{i:02d}' for i in range(nb_agents)]
@@ -281,7 +281,7 @@ def main():
             "episodes_total": outparse.episode
         },
         config=config,
-        loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/paperrun/e" + str(outparse.episode) + "cma/",
+        loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/paperrun2/e" + str(outparse.episode) + "/cmafixed/",
         num_samples=24,
         verbose=1
     )
