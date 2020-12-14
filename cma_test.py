@@ -158,7 +158,7 @@ def train(config, reporter):
                 solutions = es.ask()
                 tell = np.zeros(len(solutions))
                 counter = 0
-
+#
         if i_episode % 100 == 0 and i_episode != 0:
             if i_episode % 1000 == 0:
                 save_model(best, i_episode, reporter.logdir)
