@@ -1,5 +1,5 @@
 #PBS -N rl_badsiteprob
-#PBS -l walltime=148:00:00
+#PBS -l walltime=1148:00:00
 #PBS -l nodes=1:ppn=24
 #PBS -m n
 #PBS -t 1-1
