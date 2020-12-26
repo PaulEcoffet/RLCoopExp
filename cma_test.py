@@ -114,6 +114,7 @@ def train(config, reporter):
         rangeparams[key] = range(inparam, inparam + policies[key].num_params)
         inparam = inparam + policies[key].num_params
     counter = 0
+    print(rangeparams)
 
     es = cma.CMAEvolutionStrategy(np.zeros(inparam), 1)
     solutions = es.ask()
@@ -225,8 +226,8 @@ def main():
     parser.add_argument("-e", "--episode", type=int, default=200000)
     parser.add_argument("goodprob", type=float, nargs="*", default=[1])
     outparse = parser.parse_args()
-    ray.init(num_cpus=24)
-    #ray.init(local_mode=True, num_cpus=1)
+    #ray.init(num_cpus=24)
+    ray.init(local_mode=True, num_cpus=1)
     nb_agents = 1
     inv_id = ['inv' + '{:02d}'.format(i) for i in range(nb_agents)]
     choice_id = [f'choice{i:02d}' for i in range(nb_agents)]
