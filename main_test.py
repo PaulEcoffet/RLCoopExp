@@ -11,7 +11,7 @@ from ray import tune
 from ray.rllib import RolloutWorker, BaseEnv, Policy
 from ray.rllib.agents.callbacks import DefaultCallbacks
 from ray.rllib.evaluation import MultiAgentEpisode
-from ray.tune.logger import TBXLogger
+from ray.tune.logger import TBXLogger, pretty_print
 from ray.tune.registry import register_env
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.suggest.hyperopt import HyperOptSearch
@@ -36,17 +36,19 @@ class MyCallbacks(DefaultCallbacks):
     def on_episode_start(self, *, worker: RolloutWorker, base_env: BaseEnv,
                          policies: Dict[str, Policy],
                          episode: MultiAgentEpisode, env_index: int, **kwargs):
-        for key in policies:
-            print("*"*40)
-            print(key)
-            print("** num params **")
-            try:
-                print("precompute", policies[key].num_params)
-            except AttributeError:
-                print(count_parameters(policies[key].model))
-            print("*******")
-            print(policies[key].model)
-            print("*"*40)
+        if False:
+            for key in policies:
+                print("*"*40)
+                print(key)
+                print("** num params **")
+                try:
+                    print("precompute", policies[key].num_params)
+                except AttributeError:
+                    print(count_parameters(policies[key].model))
+                print("*******")
+                print(policies[key].model)
+                print(pretty_print(policies[key].config))
+                print("*"*40)
 
         episode.user_data["inv"] = []
         episode.user_data["accept"] = []

@@ -26,10 +26,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-e", "--episode", type=int, default=200000)
     parser.add_argument("goodprob", type=float, nargs="*", default=[1])
-    outparse = parser.parse_args()
+    parser.add_argument("--local", action="store_true", default=False)
 
-    ray.init(num_cpus=24)
-    #ray.init(local_mode=True, num_cpus=3)
+    outparse = parser.parse_args()
+    if outparse.local:
+        ray.init(local_mode=True, num_cpus=3)
+    else:
+        ray.init(num_cpus=24)
+
     policies = init_setup()
 
     config = {
