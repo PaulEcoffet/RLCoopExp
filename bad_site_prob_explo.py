@@ -30,14 +30,14 @@ if __name__ == "__main__":
 
     outparse = parser.parse_args()
     if outparse.local:
-        ray.init(local_mode=True, num_cpus=3)
+        ray.init(local_mode=True, num_cpus=24)
     else:
         ray.init(num_cpus=24)
 
     policies = init_setup()
 
     config = {
-        "num_envs_per_worker": 16,
+        "num_envs_per_worker": 1,
         "multiagent": {
             "policies": policies,
             "policy_mapping_fn": select_policy,
@@ -50,6 +50,8 @@ if __name__ == "__main__":
         "num_sgd_iter": 10,
         "callbacks": MyCallbacks,
         "env": "partner_choice",
+        "num_cpus_per_worker": 0,
+        "num_workers": 0,
         "env_config":
             {
                 "good_site_prob": tune.grid_search(outparse.goodprob),
@@ -65,7 +67,7 @@ if __name__ == "__main__":
             "episodes_total": outparse.episode
         },
         config=config,
-        loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/paperrun2/e"+str(outparse.episode)+"/ppobiglr/0.1rerun/",
+        loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/exectime/e"+str(outparse.episode)+"/ppobiglr/0.1rerun/",
         num_samples=24,
         verbose=1
     )
