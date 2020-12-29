@@ -26,7 +26,7 @@ def select_policy(agent_id):
 def get_it_from_prob(spec):
     good_prob = spec['config']['env_config']['good_site_prob']
     base_it = 100
-    return np.round(1 / good_prob) * base_it
+    return int(np.round(1 / good_prob) * base_it)
 
 
 def count_parameters(model):

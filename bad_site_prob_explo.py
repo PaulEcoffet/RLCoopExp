@@ -37,7 +37,6 @@ if __name__ == "__main__":
     policies = init_setup()
 
     config = {
-        "num_envs_per_worker": 1,
         "multiagent": {
             "policies": policies,
             "policy_mapping_fn": select_policy,
@@ -56,7 +55,8 @@ if __name__ == "__main__":
             {
                 "good_site_prob": tune.grid_search(outparse.goodprob),
                 "max_it": tune.sample_from(get_it_from_prob)
-            }
+            },
+        "sgd_minibatch_size": tune.sample_from(get_it_from_prob),
     }
 
     date_str = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -67,7 +67,7 @@ if __name__ == "__main__":
             "episodes_total": outparse.episode
         },
         config=config,
-        loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/exectime/e"+str(outparse.episode)+"/ppobiglr/0.1rerun/",
+        loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/minibatchscale/e"+str(outparse.episode)+"/ppobiglr/0.1rerun/",
         num_samples=24,
         verbose=1
     )
