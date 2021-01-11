@@ -16,6 +16,7 @@ from ray.tune.logger import TBXLogger
 from ray.tune.registry import register_env
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.suggest.hyperopt import HyperOptSearch
+from pathlib import Path
 
 from PartnerChoiceEnv import PartnerChoiceFakeSites
 from main_test import MyCallbacks, get_it_from_prob, select_policy, init_setup
@@ -30,7 +31,8 @@ if __name__ == "__main__":
     parser.add_argument("--gamma", type=float, default=1)
     parser.add_argument("--num-per-layers", type=int, default=3)
     parser.add_argument("--num-layers", type=int, default=1)
-    parser.add_argument("--outdir", type=str, default="logs/paperrun3/")
+    parser.add_argument("--outdir", type=str, default="paperrun3/")
+    parser.add_argument("--subdir", type=str, default="")
 
     outparse = parser.parse_args()
     if outparse.local:
@@ -65,7 +67,12 @@ if __name__ == "__main__":
     }
 
     date_str = datetime.now().strftime("%Y%m%d-%H%M%S")
-    logdir = outparse.outdir
+    logdir = Path("logs") / outparse.outdir / outparse.subdir
+    totdata = []
+    for k, elem in sorted(vars(outparse).items()):
+        if k not in ["outdir", "subdir", "goodprob", "local"]:
+            totdata.append(str(k) + "_" + str(elem))
+    logdir /= "+".join(totdata)
 
     analysis = tune.run(
         "PPO",
