@@ -27,6 +27,10 @@ if __name__ == "__main__":
     parser.add_argument("-e", "--episode", type=int, default=200000)
     parser.add_argument("goodprob", type=float, nargs="*", default=[1])
     parser.add_argument("--local", action="store_true", default=False)
+    parser.add_argument("--gamma", type=float, default=1)
+    parser.add_argument("--num-per-layers", type=int, default=3)
+    parser.add_argument("--num-layers", type=int, default=1)
+    parser.add_argument("--outdir", type=str, default="logs/paperrun3/")
 
     outparse = parser.parse_args()
     if outparse.local:
@@ -34,7 +38,7 @@ if __name__ == "__main__":
     else:
         ray.init(num_cpus=24)
 
-    policies = init_setup()
+    policies = init_setup(outparse.num_per_layers, outparse.num_layers)
 
     config = {
         "num_envs_per_worker": 16,
@@ -45,13 +49,13 @@ if __name__ == "__main__":
         "clip_actions": True,
         "framework": "torch",
         "no_done_at_end": True,
-        "gamma": 1,
+        "gamma": tune.grid_search([outparse.gamma]),
         "lr": 5e-3,
         "num_sgd_iter": 10,
         "callbacks": MyCallbacks,
         "env": "partner_choice",
         #"num_cpus_per_worker": 0,
-        #"num_workers": 0,
+        "num_workers": 6,
         "env_config":
             {
                 "good_site_prob": tune.grid_search(outparse.goodprob),
@@ -61,6 +65,8 @@ if __name__ == "__main__":
     }
 
     date_str = datetime.now().strftime("%Y%m%d-%H%M%S")
+    logdir = outparse.outdir
+
     analysis = tune.run(
         "PPO",
         name="goodsiteprob_" + date_str,
@@ -68,7 +74,7 @@ if __name__ == "__main__":
             "episodes_total": outparse.episode
         },
         config=config,
-        loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/paperrun2/e"+str(outparse.episode)+"/ppobiglr/1.0rerun/",
+        loggers=[TBXLogger], checkpoint_at_end=True, local_dir=logdir,
         num_samples=24,
         verbose=1
     )

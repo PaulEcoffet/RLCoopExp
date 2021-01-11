@@ -76,7 +76,7 @@ class MyCallbacks(DefaultCallbacks):
         episode.custom_metrics["good_site_prob"] = base_env.get_unwrapped()[0].good_site_prob
 
 
-def init_setup():
+def init_setup(num_per_layer=3, nb_layers=1):
     nb_agents = 1
     inv_id = ['inv' + '{:02d}'.format(i) for i in range(nb_agents)]
     choice_id = [f'choice{i:02d}' for i in range(nb_agents)]
@@ -88,7 +88,7 @@ def init_setup():
     inv_obs_space = Box(np.array([0], dtype=np.float32), np.array([1], np.float32))
     choicemodel_dict = {
         "model": {
-            "fcnet_hiddens": [3],
+            "fcnet_hiddens": [num_per_layer for _ in range(nb_layers)],
             "max_seq_len": 9999999
         }
     }
