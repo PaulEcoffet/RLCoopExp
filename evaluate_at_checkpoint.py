@@ -147,8 +147,8 @@ if __name__ == "__main__":
     ray.init(local_mode=True)
     register_env("partner_choice",
                  lambda config: PartnerChoiceFakeSites(config))
-    conds = ["ppobiglr", "cmafixed"]
-    for cond in conds:
+    conds = [("ppobiglr", True), ("ppobiglr", False)]
+    for cond, analysis_mode in conds:
         main_path = Path(f"/Users/paulecoffet/Documents/isir/These/data/RLCoopExp/logs/paperrun2/e200000/{cond}/")
         glob_path = main_path
         alldfs = []

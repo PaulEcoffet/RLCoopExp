@@ -227,7 +227,7 @@ def main():
     parser.add_argument("goodprob", type=float, nargs="*", default=[1])
     outparse = parser.parse_args()
     #ray.init(num_cpus=24)
-    ray.init(local_mode=True, num_cpus=1)
+    ray.init(local_mode=True, num_cpus=4)
     nb_agents = 1
     inv_id = ['inv' + '{:02d}'.format(i) for i in range(nb_agents)]
     choice_id = [f'choice{i:02d}' for i in range(nb_agents)]
@@ -272,7 +272,8 @@ def main():
             {
                 "good_site_prob": tune.grid_search(outparse.goodprob),
                 "max_it": tune.sample_from(get_it_from_prob)
-            }
+            },
+        "use_critic": False
     }
     date_str = datetime.now().strftime("%Y%m%d-%H%M%S")
     analysis = tune.run(
@@ -282,7 +283,7 @@ def main():
             "episodes_total": outparse.episode
         },
         config=config,
-        loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/paperrun2/e" + str(outparse.episode) + "/cmafixed/",
+        loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/stochasticcmatest/e" + str(outparse.episode) + "/cmafixed/",
         num_samples=24,
         verbose=1
     )
