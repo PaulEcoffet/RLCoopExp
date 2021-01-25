@@ -32,7 +32,7 @@ if __name__ == "__main__":
     parser.add_argument("--num-per-layers", type=int, default=3)
     parser.add_argument("--num-layers", type=int, default=1)
     parser.add_argument("--outdir", type=str, default="paperrun3/")
-    parser.add_argument("--restore", type="str")
+    parser.add_argument("--restore", type=str)
     parser.add_argument("--subdir", type=str, default="")
 
     outparse = parser.parse_args()
