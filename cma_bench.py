@@ -1,6 +1,7 @@
 import argparse
 import os
 import pickle
+import time
 from collections import defaultdict
 from datetime import datetime
 from typing import Dict, Any
@@ -101,7 +102,11 @@ register_env("partner_choice",
              lambda config: PartnerChoiceFakeSites(config))
 
 
+time_since_restore_start = 0
+
 def train(config, reporter):
+    global time_since_restore_start
+    time_since_restore_start = time.time()
     env = PartnerChoiceFakeSites(config['env_config'])
     policies = {}
     solutions = None
@@ -178,6 +183,7 @@ def save_model(best: Dict[str, np.ndarray], i_episode:int, logdir: str):
 
 
 def evaluate(best, rangeparams, env, i_episode, policies, reporter, timestep_total):
+    global time_since_restore_start
     reward_through_eval = []
     inv_through_eval = []
     accept_through_eval = []
@@ -218,6 +224,7 @@ def evaluate(best, rangeparams, env, i_episode, policies, reporter, timestep_tot
         episode_reward_min=np.min(reward_through_eval),
         episode_reward_mean=np.mean(reward_through_eval),
         episode_len_mean=np.mean(stepcount_through_eval),
+        timestep_since_restore=time.time() - time_since_restore_start,
         custom_metrics={"inv": np.mean(inv_through_eval), "accept": np.mean(accept_through_eval),
                         "good_site_prob": env.good_site_prob},
         hist_stats=dict(inv=inv_through_eval, accept=accept_through_eval)
@@ -284,7 +291,7 @@ def main():
         train,
         name="goodsiteprob_" + date_str,
         stop={
-            "timesteps_total": 100000
+            "time_since_restore": 3600
         },
         config=config,
         loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./bench/logs/e" + str(outparse.episode) + "/cmafixed/",

@@ -29,8 +29,8 @@ if __name__ == "__main__":
     parser.add_argument("goodprob", type=float, nargs="*", default=[1])
     parser.add_argument("--local", action="store_true", default=False)
     parser.add_argument("--gamma", type=float, default=1)
-    parser.add_argument("--num-per-layers", type=int, default=3)
-    parser.add_argument("--num-layers", type=int, default=1)
+    parser.add_argument("--num-per-layers", type=int, default=256)
+    parser.add_argument("--num-layers", type=int, default=2)
     parser.add_argument("--outdir", type=str, default="paperrun3/")
     parser.add_argument("--subdir", type=str, default="")
 
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     policies = init_setup(outparse.num_per_layers, outparse.num_layers)
 
     config = {
-        "num_envs_per_worker": 16,
+        #"num_envs_per_worker": 16,
         "multiagent": {
             "policies": policies,
             "policy_mapping_fn": select_policy,

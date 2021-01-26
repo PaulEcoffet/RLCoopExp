@@ -79,7 +79,7 @@ if __name__ == "__main__":
         "PPO",
         name="goodsiteprob_" + date_str,
         stop={
-            "timesteps_since_restore": 100000,
+            "time_since_restore": 3600,
         },
         config=config,
         loggers=[TBXLogger], checkpoint_at_end=True,

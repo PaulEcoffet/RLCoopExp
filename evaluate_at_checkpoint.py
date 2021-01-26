@@ -22,10 +22,10 @@ from main_test import init_setup, select_policy, MyCallbacks
 
 logging.basicConfig(level=logging.DEBUG)
 
-policies = init_setup()
+policies = init_setup(256, 2)
 
 config = {
-    "num_envs_per_worker": 16,
+    "num_envs_per_worker": 1,
     "num_workers": 0,
     "multiagent": {
         "policies": policies,
@@ -147,9 +147,9 @@ if __name__ == "__main__":
     ray.init(local_mode=True)
     register_env("partner_choice",
                  lambda config: PartnerChoiceFakeSites(config))
-    conds = [("ppobiglr", True), ("ppobiglr", False)]
+    conds = [("bignetfastredo", False)]
     for cond, analysis_mode in conds:
-        main_path = Path(f"/Users/paulecoffet/Documents/isir/These/data/RLCoopExp/logs/paperrun2/e200000/{cond}/")
+        main_path = Path(f"/Users/paulecoffet/Documents/isir/These/data/RLCoopExp/logs/paperrun3/{cond}/")
         glob_path = main_path
         alldfs = []
         alldfs_logs = []
@@ -162,8 +162,9 @@ if __name__ == "__main__":
             else:
                 allpaths = list(main_path.rglob("**/*"))
             print("done")
+
         for path in tqdm.tqdm(allpaths):
-            res = re.search(r"partner_choice_(?P<trialid>.*)_(?P<runid>\d+)_good_site_prob=(?P<prob>[0-9.]*),", str(path))
+            res = re.search(r"partner_choice_(?P<trialid>.*)_(?P<runid>\d+).*_good_site_prob=(?P<prob>[0-9.]*),", str(path))
             if not res:
                 continue
             run_id = res.group("runid")
