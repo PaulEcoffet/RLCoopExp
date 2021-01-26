@@ -291,7 +291,7 @@ def main():
         train,
         name="goodsiteprob_" + date_str,
         stop={
-            "time_since_restore": 3600
+            "time_since_restore": 3600/4
         },
         config=config,
         loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./bench/logs/e" + str(outparse.episode) + "/cmafixed/",
