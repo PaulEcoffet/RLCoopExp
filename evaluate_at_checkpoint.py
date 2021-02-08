@@ -147,9 +147,11 @@ if __name__ == "__main__":
     ray.init(local_mode=True)
     register_env("partner_choice",
                  lambda config: PartnerChoiceFakeSites(config))
-    conds = [("bignetfastredo", False)]
+    conds = [("ppo_mlp", False), ("ppo_mlp", True),
+             ("ppo_deep", False), ("ppo_deep", True),
+             ("cmaes", False), ("cmaes", True)]
     for cond, analysis_mode in conds:
-        main_path = Path(f"/Users/paulecoffet/Documents/isir/These/data/RLCoopExp/logs/paperrun3/{cond}/")
+        main_path = Path(f"logs/paperrun/{cond}/")
         glob_path = main_path
         alldfs = []
         alldfs_logs = []

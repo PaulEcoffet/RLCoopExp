@@ -33,9 +33,9 @@ if __name__ == "__main__":
     parser.add_argument("goodprob", type=float, nargs="*", default=[1])
     parser.add_argument("--local", action="store_true", default=False)
     parser.add_argument("--gamma", type=float, default=1)
-    parser.add_argument("--num-per-layers", type=int, default=256)
-    parser.add_argument("--num-layers", type=int, default=2)
-    parser.add_argument("--outdir", type=str, default="paperrun3/")
+    parser.add_argument("--num-per-layers", type=int, default=3)
+    parser.add_argument("--num-layers", type=int, default=1)
+    parser.add_argument("--outdir", type=str, default="paperrun/")
     parser.add_argument("--subdir", type=str, default="")
     parser.add_argument("--lr-schedule", action="store_true", default=False)
 
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         "framework": "torch",
         "no_done_at_end": True,
         "gamma": tune.grid_search([outparse.gamma]),
-        "lr": 1e-3,
+        "lr": 5e-3 if outparse.num_per_layers < 10,
         "num_sgd_iter": 10,
         "callbacks": MyCallbacks,
         "env": "partner_choice",

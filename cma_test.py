@@ -283,7 +283,7 @@ def main():
             "episodes_total": outparse.episode
         },
         config=config,
-        loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/stochasticcmatest/e" + str(outparse.episode) + "/cmafixed/",
+        loggers=[TBXLogger], checkpoint_at_end=True, local_dir="./logs/paperrun/cmaes/",
         num_samples=24,
         verbose=1
     )
