@@ -21,6 +21,10 @@ from pathlib import Path
 from PartnerChoiceEnv import PartnerChoiceFakeSites
 from main_test import MyCallbacks, get_it_from_prob, select_policy, init_setup
 
+def get_lr_from_prob(config):
+    it = get_it_from_prob(config)
+    return [[0, 1e-3], [25000 * it / 2, 1e-3], [100000 * it / 2, 1e-6]]
+
 import argparse
 
 if __name__ == "__main__":
@@ -33,6 +37,7 @@ if __name__ == "__main__":
     parser.add_argument("--num-layers", type=int, default=2)
     parser.add_argument("--outdir", type=str, default="paperrun3/")
     parser.add_argument("--subdir", type=str, default="")
+    parser.add_argument("--lr-schedule", action="store_true", default=False)
 
     outparse = parser.parse_args()
     if outparse.local:
@@ -52,7 +57,7 @@ if __name__ == "__main__":
         "framework": "torch",
         "no_done_at_end": True,
         "gamma": tune.grid_search([outparse.gamma]),
-        "lr": 5e-3,
+        "lr": 1e-3,
         "num_sgd_iter": 10,
         "callbacks": MyCallbacks,
         "env": "partner_choice",
@@ -63,6 +68,7 @@ if __name__ == "__main__":
                 "good_site_prob": tune.grid_search(outparse.goodprob),
                 "max_it": tune.sample_from(get_it_from_prob)
             },
+        "lr_schedule": tune.sample_from(get_lr_from_prob) if outparse.lr_schedule else None,
         #"sgd_minibatch_size": tune.sample_from(get_it_from_prob),
     }
 

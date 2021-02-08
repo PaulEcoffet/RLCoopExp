@@ -237,8 +237,8 @@ def main():
     parser.add_argument("--restore", type=str, default="")
     parser.add_argument("goodprob", type=float, nargs="*", default=[1])
     outparse = parser.parse_args()
-    #ray.init(num_cpus=24)
-    ray.init(local_mode=True, num_cpus=4)
+    ray.init(num_cpus=24)
+    #ray.init(local_mode=True, num_cpus=4)
     nb_agents = 1
     inv_id = ['inv' + '{:02d}'.format(i) for i in range(nb_agents)]
     choice_id = [f'choice{i:02d}' for i in range(nb_agents)]
